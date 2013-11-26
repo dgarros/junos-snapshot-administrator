@@ -178,6 +178,49 @@ template do_junos_cmd( $jnx, $target, $cmd-ns )
 				copy-of $rpc-rsp/*;   /**/
 			}
 		}
+        
+         /* --------------------------------------- */
+        /* Looks for the for-each test operator    */  
+        /* if present, execute sub commands        */
+        /* for-each argument will be replaced      */
+        /* --------------------------------------- */	
+        
+        for-each ( $cmd-ns/iterate/for-each ) {
+        
+            var $arg-iterate = $cmd-ns/iterate/@cbd:argv;
+            var $arg-foreach = ./@cbd:argv;
+
+            var $new-cmd-before = substring-before( ./command, ./@cbd:argv );
+            var $new-cmd-after  = substring-after( ./command, ./@cbd:argv );
+            
+            var $dynexp-fe = dyn:evaluate ( "$rpc-rsp" _ $arg-iterate );
+                    
+            for-each( $dynexp-fe ) {
+            
+                var $dynexp-element     = dyn:evaluate ("./" _ $arg-foreach);
+                var $cmd-name-fe = concat($cmd-name, "__", $dynexp-element);
+                var $filename-fe = concat( $target, "__", $cmd-name-fe,"__", $SNAP-NAME, ".xml" );
+            
+                var $new-cmd-fe = concat($new-cmd-before, $dynexp-element , $new-cmd-after);
+                
+                expr jcs:output( "  EXEC: '", $new-cmd-fe, "' ... ");
+        
+                var $rpc-cmd-fe = <command> $new-cmd-fe;
+                var $rpc-rsp-fe = jcs:execute-xns( $jnx, $rpc-cmd-fe );
+                
+                if( $rpc-rsp-fe/xnm:error ) {
+                    expr jcs:output("ERROR: [invalid Junos command]: '", $new-cmd-fe, "'" );
+                }
+                else {
+                    expr jcs:output( "  SAVE: '", $filename-fe, "' ... ");
+                    <exsl:document href=$filename-fe indent="yes"> {
+                        <jppc:section name=$cmd-name-fe mode=$SNAP-NAME conf=$CONF-FILE target=$target ts=$TIME-NOW> {
+                            copy-of $rpc-rsp-fe/*;   /**/
+                        }
+                    }
+                }
+            }        
+        }        
 	}
 }
 

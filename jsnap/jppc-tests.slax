@@ -980,5 +980,33 @@ template jppc:subEXEC_TEST_delta_fixed(
 	}
 }
 
+/* ####################################################################### */
+/* ####################################################################### */
+/*                                                                         */
+/*                           		for-each		                              */
+/*                                                                         */
+/* ####################################################################### */
+/* ####################################################################### */
+
+<func:function name="jppc:EXEC_TEST_for-each">
+{
+	param $cmd-ns;				/* entire section block */
+	param $check-ns;			/* this collection within section */
+	param $test-ns;			    /* this test within dataset */
+	param $pre-ns;				/* precheck node-set for collection */
+	param $pre-iddb;			/* precheck id database */
+	param $post-ns;			    /* postcheck node-set for collection */
+	param $post-iddb;			/* postcheck id database */
+	
+	var $args = jcs:split( ",", $test-ns/@cbd:argv );
+	
+    for-each($post-ns) {
+        expr jcs:output("Node group name : " _ ./node-group-name );
+    }
+	
+    <func:result select="$JPPC-TEST-PASS">;
+}
+
+
 
 
